@@ -1,8 +1,7 @@
 package com.example.mspayment.model.account;
 
 import com.example.mspayment.enums.Currency;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
+import com.example.mspayment.validations.validation.MyEmailConstraint;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;

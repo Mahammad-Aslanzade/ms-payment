@@ -1,13 +1,14 @@
 package com.example.mspayment.controller;
 
+import com.example.mspayment.exceptions.AlreadyExist;
 import com.example.mspayment.exceptions.BalanceIsNotValid;
 import com.example.mspayment.exceptions.NotFound;
+import com.example.mspayment.model.exceptions.AlreadyExistDto;
 import com.example.mspayment.model.exceptions.BalanceIsNotValidDto;
 import com.example.mspayment.model.exceptions.NotFoundDto;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -45,10 +46,19 @@ public class ErrorHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, String>> handleValidationExceptions(MethodArgumentNotValidException ex) {
+        System.out.println(
+                ex.getBindingResult().getFieldErrors() + ex.getMessage()
+        );
         Map<String, String> errors = new HashMap<>();
         ex.getBindingResult().getFieldErrors().forEach(error ->
                 errors.put(error.getField(), error.getDefaultMessage())
         );
         return new ResponseEntity<>(errors, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(AlreadyExist.class)
+    public AlreadyExistDto handleAlreadyExist(AlreadyExist e){
+        log.error(e.getError());
+        return new AlreadyExistDto(e.getMessage());
     }
 }

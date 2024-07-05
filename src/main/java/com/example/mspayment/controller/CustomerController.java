@@ -28,8 +28,9 @@ public class CustomerController {
         return customerService.getCustomer(customerId);
     }
 
+    @CrossOrigin(origins = "*")
     @PostMapping
-    public void saveCustomer(@RequestPart(name = "file") CustomerReqDto customerReqDto,
+    public void saveCustomer(@RequestPart(name = "customerDetails") CustomerReqDto customerReqDto,
                              @RequestPart(name = "image") MultipartFile image) throws IOException {
         customerService.saveCustomer(customerReqDto, image);
     }

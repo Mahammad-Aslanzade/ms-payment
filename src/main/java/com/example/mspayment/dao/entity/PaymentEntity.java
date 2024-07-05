@@ -1,10 +1,11 @@
 package com.example.mspayment.dao.entity;
 
-import com.example.mspayment.enums.Currency;
 import com.example.mspayment.enums.Status;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.util.Date;
 
 @Entity
 @Table(name = "payment")
@@ -17,8 +18,7 @@ public class PaymentEntity {
     private String fromCard;
     private String toCard;
     private double amount;
-    @Enumerated(value = EnumType.STRING)
-    private Currency currency;
+    private Date date;
     @Enumerated(value = EnumType.STRING)
     private Status status;
 

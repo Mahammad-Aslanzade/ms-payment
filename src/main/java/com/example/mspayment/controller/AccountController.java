@@ -1,6 +1,6 @@
 package com.example.mspayment.controller;
 
-import com.example.mspayment.model.PayReqDto;
+import com.example.mspayment.model.PaymentReqDto;
 import com.example.mspayment.model.account.AccountReqDto;
 import com.example.mspayment.model.account.AccountResDto;
 import com.example.mspayment.model.PaymentDto;
@@ -16,6 +16,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AccountController {
     private final AccountService accountService;
+
 
     @GetMapping
     public List<AccountResDto> getAllAccounts(){
@@ -35,7 +36,7 @@ public class AccountController {
 
     // new operation
     @PostMapping("/pay")
-    public PayReqDto paymentOperation(@Valid @RequestBody PayReqDto payDto) {
+    public PaymentReqDto paymentOperation(@Valid @RequestBody PaymentReqDto payDto) {
         return accountService.paymentOperation(payDto);
 
     }

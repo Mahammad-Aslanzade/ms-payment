@@ -18,4 +18,5 @@ public class CustomerResDto {
     private String surname;
     private String image;
     private List<AccountResDto> account;
+
 }

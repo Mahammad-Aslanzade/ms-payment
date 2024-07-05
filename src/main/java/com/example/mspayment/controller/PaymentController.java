@@ -14,7 +14,6 @@ import java.util.List;
 public class PaymentController {
 
     private final PaymentService paymentService;
-    private final ImageService imageService;
 
     @GetMapping
     public List<PaymentDto> getAllPayments() {

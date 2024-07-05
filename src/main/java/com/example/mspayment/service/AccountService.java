@@ -5,10 +5,12 @@ import com.example.mspayment.dao.entity.CustomerEntity;
 import com.example.mspayment.dao.repository.AccountRepository;
 import com.example.mspayment.dao.repository.CustomerRepository;
 import com.example.mspayment.enums.Currency;
+import com.example.mspayment.enums.Status;
+import com.example.mspayment.exceptions.AlreadyExist;
 import com.example.mspayment.exceptions.BalanceIsNotValid;
 import com.example.mspayment.exceptions.NotFound;
 import com.example.mspayment.mapper.AccountMapper;
-import com.example.mspayment.model.PayReqDto;
+import com.example.mspayment.model.PaymentReqDto;
 import com.example.mspayment.model.account.AccountReqDto;
 import com.example.mspayment.model.account.AccountResDto;
 import com.example.mspayment.model.PaymentDto;
@@ -17,7 +19,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -25,6 +26,8 @@ import java.util.UUID;
 public class AccountService {
     private final AccountRepository accountRepository;
     private final AccountMapper accountMapper;
+
+    private final PaymentService paymentService;
 
     private final CustomerRepository customerRepository;
 
@@ -36,7 +39,18 @@ public class AccountService {
                         "Action.ERROR.createAccount customerId : " + accountReqDto.getCustomerId() + " not found "
                 ));
         AccountEntity account = accountMapper.mapToEntity(accountReqDto);
-        account.setAccountNumber(customer.getName() + "-" + account.getCurrency());
+        String accountNumber = customer.getId() + "-" + account.getCurrency();
+
+        AccountEntity checkAccount = accountRepository.findByAccountNumber(accountNumber);
+
+        if (checkAccount != null) {
+            throw new AlreadyExist(
+                    "Customer has already had account in " + accountReqDto.getCurrency() + " !",
+                    "Action.ERROR.createAccount requestDto : " + accountReqDto
+                    );
+        }
+
+        account.setAccountNumber(accountNumber);
         account.setCustomer(customer);
         accountRepository.save(account);
         log.info("Action.createAccount.end");
@@ -98,7 +112,7 @@ public class AccountService {
 
     private double calculateCommission(AccountEntity accFrom, AccountEntity accTo, Double amount) {
         double commisionForAcc = 0.001; // 0.1%
-        double commisionForCur = 0.02; // 1%
+        double commisionForCur = 0.01; // 1%
 
         double totalCommission = 0;
 
@@ -112,21 +126,20 @@ public class AccountService {
         return totalCommission;
     }
 
-    public PayReqDto paymentOperation(PayReqDto payDto) {
+    public PaymentReqDto paymentOperation(PaymentReqDto payDto) {
         AccountEntity accountFrom = findAccountByAccountNumber(payDto.getFromCard());
         AccountEntity accountTo = findAccountByAccountNumber(payDto.getToCard());
+        // Calculations of commision and convertion
         double amount = payDto.getAmount();
-
-
         double totalCommision = calculateCommission(accountFrom, accountTo, amount);
         double totalAmountWithCommission = amount + totalCommision;
         double convertedMoney = Currency.convertMoney(accountFrom.getCurrency(), accountTo.getCurrency(), amount);
-
-        System.out.println("Amount with commision : " + totalAmountWithCommission + accountFrom.getCurrency());
-        System.out.println("Converted Money : " + convertedMoney + accountTo.getCurrency());
         payDto.setAmount(convertedMoney);
+        //
+
 
         if (totalAmountWithCommission > accountFrom.getBalance()) {
+            paymentService.savePayment(payDto, Status.FAILED);
             throw new BalanceIsNotValid(
                     "Action.Error.BalanceIsNotEnough account : " + accountFrom.getAccountNumber(),
                     "BALANCE_IS_NOT_ENOUGH",
@@ -138,6 +151,7 @@ public class AccountService {
         accountFrom.setBalance(accountFrom.getBalance() - totalAmountWithCommission);
         accountTo.setBalance(accountTo.getBalance() + convertedMoney);
 
+        paymentService.savePayment(payDto, Status.COMPLETED);
         accountRepository.save(accountFrom);
         accountRepository.save(accountTo);
         return payDto;
